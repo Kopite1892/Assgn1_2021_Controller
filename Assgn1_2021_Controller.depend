@@ -1,0 +1,29 @@
+# depslib dependency file v1.0
+1623909666 source:c:\users\bigja\desktop\codeblocks-20.03-nosetup\assgn1_2021_controller\pnpcontrolinterface.c
+	"pnpControl.h"
+
+1624244632 c:\users\bigja\desktop\codeblocks-20.03-nosetup\assgn1_2021_controller\pnpcontrol.h
+	<stdio.h>
+	<stdlib.h>
+	<fcntl.h>
+	<sys/mman.h>
+	<unistd.h>
+	<time.h>
+	<pthread.h>
+	<termios.h>
+	<math.h>
+
+1626691022 source:c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrolinterface.c
+	"pnpControl.h"
+
+1626691022 c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrol.h
+	<stdio.h>
+	<stdlib.h>
+	<fcntl.h>
+	<sys/mman.h>
+	<unistd.h>
+	<time.h>
+	<pthread.h>
+	<termios.h>
+	<math.h>
+
