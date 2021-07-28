@@ -83,7 +83,7 @@ int main()
         printf("Time: %7.2f  Initial state: %.15s  Operating in manual control mode, there are %d parts to place\n\n", getSimTime(), state_name[HOME], number_of_components_to_place);
         printf("Part 0 details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n\n",
         pi[count].component_designation, pi[count].component_footprint, pi[count].component_value, pi[count].x_target, pi[count].y_target, pi[count].theta_target, pi[0].feeder);
-
+        printf("Time: %7.2f  select tape feeder to pick from \n", getSimTime());
 		/* loop until user quits */
         while(!isPnPSimulationQuitFlagOn())
         {
@@ -94,24 +94,29 @@ int main()
             switch (state)
             {
                 case HOME:
-					if (count != number_of_components_to_place) //check if there are any components to pick
+					if (count == number_of_components_to_place) //check if there are any components to pick
 					{
-						finished = FALSE;
-						printf("Time: %7.2f  select tape feeder to pick from \n", getSimTime());
-					}
-					else
-                    {
-                        finished = TRUE;
+						finished = TRUE;
 						printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
-                    }
-
-                    if (finished == FALSE && (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9'))
-                    {
+						while(!isPnPSimulationQuitFlagOn())
+                        {
+                            c = getKey();
+                        }
+                        break;
+					}
+					state = WAIT;
+					if (finished == FALSE && (c - '0') == pi[count].feeder)
+					                    {
                         /* the expression (c - '0') obtains the integer value of the number key pressed */
                         setTargetPos(TAPE_FEEDER_X[c - '0'], TAPE_FEEDER_Y[c - '0']);
                         state = MOVE_TO_FEEDER;
                         printf("Time: %7.2f  New state: %.20s  Issued instruction to move to tape feeder %c\n", getSimTime(), state_name[state], c);
                     }
+                    else if (finished == FALSE && (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9') && (c - '0') != pi[count].feeder)
+                    {
+                        printf("Time: %7.2f  Feeder mismatch \n", getSimTime());
+                    }
+
                     break;
 
                 case MOVE_TO_FEEDER:
@@ -124,6 +129,25 @@ int main()
                     break;
 
                 case WAIT:
+
+                    if (count == number_of_components_to_place) //check if there are any components to pick
+					{
+						finished = TRUE;
+						printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
+						//add while to wait for q
+					}
+					state = WAIT;
+					if (finished == FALSE && (c - '0') == pi[count].feeder)
+					                    {
+                        /* the expression (c - '0') obtains the integer value of the number key pressed */
+                        setTargetPos(TAPE_FEEDER_X[c - '0'], TAPE_FEEDER_Y[c - '0']);
+                        state = MOVE_TO_FEEDER;
+                        printf("Time: %7.2f  New state: %.20s  Issued instruction to move to tape feeder %c\n", getSimTime(), state_name[state], c);
+                    }
+                    else if (finished == FALSE && (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9') && (c - '0') != pi[count].feeder)
+                    {
+                        printf("Time: %7.2f  Feeder mismatch \n", getSimTime());
+                    }
 
 					if (picked == FALSE && (c == 'p' || c == 'P'))
 					{
@@ -204,6 +228,7 @@ int main()
                     if (isSimulatorReadyForNextInstruction())
 					{
 						takePhoto(0);
+						sleepMilliseconds(1000);
 						theta_pick_error[1] = getPickErrorTheta(1);
 						if (theta_pick_error[1] == 0)
                         {
@@ -231,6 +256,7 @@ int main()
                     if (isSimulatorReadyForNextInstruction())
 					{
 						takePhoto(1);
+						sleepMilliseconds(1000);
 						x_preplace_error = getPreplaceErrorX();
 						y_preplace_error = getPreplaceErrorY();
 						if (x_preplace_error == 0 && y_preplace_error == 0)
@@ -308,8 +334,9 @@ int main()
 						adjusted = FALSE;
 						count = count + 1;
 						printf("Time: %7.2f  New state: %.20s  Component %.2f Placed, waiting for next instruction\n", getSimTime(), state_name[state], pi[0].component_value);
-						printf("Part 0 details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n\n",
-                        pi[count].component_designation, pi[count].component_footprint, pi[count].component_value, pi[count].x_target, pi[count].y_target, pi[count].theta_target, pi[0].feeder);
+						printf("Part details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n\n",
+                        pi[count].component_designation, pi[count].component_footprint, pi[count].component_value, pi[count].x_target, pi[count].y_target, pi[count].theta_target, pi[count].feeder);
+                        printf("Time: %7.2f  select tape feeder to pick from \n", getSimTime());
 					}
                     break;
 
