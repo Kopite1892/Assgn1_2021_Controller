@@ -25,10 +25,11 @@
 #define LOWER_COMPONENT    	12
 #define PLACE_COMPONENT    	13
 #define RAISE_HEAD      	14
+#define COMPLETED         	15
 
 
 /* state_names of up to 19 characters (the 20th character is a null terminator), only required for display purposes */
-const char state_name[15][20] = {"HOME              ",
+const char state_name[16][20] = {"HOME              ",
                                 "MOVE TO FEEDER		",
                                 "WAIT	            ",
 								"LOWER_NOZZLE       ",
@@ -42,7 +43,8 @@ const char state_name[15][20] = {"HOME              ",
 								"ADJUST  		    ",
 								"LOWER_COMPONENT    ",
 								"PLACE_COMPONENT    ",
-								"RAISE_HEAD         "};
+								"RAISE_HEAD         ",
+								"COMPLETED          "};
 
 const double TAPE_FEEDER_X[NUMBER_OF_FEEDERS] = {FDR_0_X, FDR_1_X, FDR_2_X, FDR_3_X, FDR_4_X, FDR_5_X, FDR_6_X, FDR_7_X, FDR_8_X, FDR_9_X};
 const double TAPE_FEEDER_Y[NUMBER_OF_FEEDERS] = {FDR_0_Y, FDR_1_Y, FDR_2_Y, FDR_3_Y, FDR_4_Y, FDR_5_Y, FDR_6_Y, FDR_7_Y, FDR_8_Y, FDR_9_Y};
@@ -72,7 +74,7 @@ int main()
     if (operation_mode == MANUAL_CONTROL)
     {
         /* initialization of variables and controller window */
-        int state = HOME, finished = FALSE, picked = FALSE, adjusted = FALSE, rotated = FALSE;
+        int state = HOME, finished = FALSE, picked = FALSE, adjusted = FALSE, rotated = FALSE, camera = FALSE;
 		double theta_pick_error[3]= {0, 0, 0}; //array for angle errors
 		double x_preplace_error = 0; //gantry x error
 		double y_preplace_error = 0; //gantry y error
@@ -94,16 +96,7 @@ int main()
             switch (state)
             {
                 case HOME:
-					if (count == number_of_components_to_place) //check if there are any components to pick
-					{
-						finished = TRUE;
-						printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
-						while(!isPnPSimulationQuitFlagOn())
-                        {
-                            c = getKey();
-                        }
-                        break;
-					}
+
 					state = WAIT;
 					if (finished == FALSE && (c - '0') == pi[count].feeder)
 					                    {
@@ -130,13 +123,12 @@ int main()
 
                 case WAIT:
 
-                    if (count == number_of_components_to_place) //check if there are any components to pick
+                    if (finished == TRUE) //check if there are any components to pick
 					{
-						finished = TRUE;
 						printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
-						//add while to wait for q
+						state = COMPLETED;
 					}
-					state = WAIT;
+
 					if (finished == FALSE && (c - '0') == pi[count].feeder)
 					                    {
                         /* the expression (c - '0') obtains the integer value of the number key pressed */
@@ -160,12 +152,12 @@ int main()
 						state = MOVE_TO_CAMERA;
 						printf("Time: %7.2f  New state: %.20s  Issued instruction to Move to Camera \n", getSimTime(), state_name[state]);
 					}
-					if (theta_pick_error[1] != 0 && (c == 'r' || c == 'R') && rotated == FALSE)
+					if (theta_pick_error[1] != 0 && (c == 'r' || c == 'R') && rotated == FALSE && picked == TRUE && camera == TRUE)
 					{
 						state = ROTATE;
 						printf("Time: %7.2f  New state: %.20s  Issued instruction to Rotate component \n", getSimTime(), state_name[state]);
 					}
-					if ((x_preplace_error != 0 || y_preplace_error != 0) && (c == 'a' || c == 'A') && adjusted == FALSE)
+					if ((x_preplace_error != 0 || y_preplace_error != 0) && (c == 'a' || c == 'A') && adjusted == FALSE && picked == TRUE && camera == TRUE)
 					{
 						state = ADJUST;
 						printf("Time: %7.2f  New state: %.20s  Issued instruction to Adjust position of Gantry \n", getSimTime(), state_name[state]);
@@ -215,7 +207,7 @@ int main()
                     break;
 
 				case MOVE_TO_CAMERA:
-
+                    camera  = TRUE;
                     if (isSimulatorReadyForNextInstruction())
 					{
 						state = TAKE_UP_PHOTO;
@@ -328,15 +320,45 @@ int main()
                     if (isSimulatorReadyForNextInstruction())
 					{
 						raiseNozzle(1);
+						//Reset variables
 						state = WAIT;
 						picked = FALSE;
 						rotated = FALSE;
 						adjusted = FALSE;
+						camera = FALSE;
+						//increase counter
 						count = count + 1;
 						printf("Time: %7.2f  New state: %.20s  Component %.2f Placed, waiting for next instruction\n", getSimTime(), state_name[state], pi[0].component_value);
-						printf("Part details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n\n",
-                        pi[count].component_designation, pi[count].component_footprint, pi[count].component_value, pi[count].x_target, pi[count].y_target, pi[count].theta_target, pi[count].feeder);
-                        printf("Time: %7.2f  select tape feeder to pick from \n", getSimTime());
+
+						if (count == number_of_components_to_place) //check if there are any components to pick
+                        {
+                            finished = TRUE;
+                        }
+                        else if (count != number_of_components_to_place)
+                        {
+                            printf("Part details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n\n",
+                            pi[count].component_designation, pi[count].component_footprint, pi[count].component_value, pi[count].x_target, pi[count].y_target, pi[count].theta_target, pi[count].feeder);
+                            printf("Time: %7.2f  select tape feeder to pick from \n", getSimTime());
+                        }
+
+					}
+                    break;
+
+                    case COMPLETED:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+
+						while(!isPnPSimulationQuitFlagOn())
+                        {
+                            c = getKey();
+                            if(c != '\0')
+                            {
+                                printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
+                            }
+                        }
+                        break;
+
 					}
                     break;
 
