@@ -80,6 +80,8 @@ int main()
 	double adjustX, adjustY; //X & Y adjustment needed
     char c;
     int count = 0; //setup a counter to keep track of parts
+	int pickedCount = 0; //setup a counter to keep track of autoPicking
+	int placedCount = 0; //setup a counter to keep track of autoPlacing
 
     /* state machine code for manual control mode */
     if (operation_mode == MANUAL_CONTROL)
@@ -184,7 +186,7 @@ int main()
 						printf("Time: %7.2f  New state: %.20s  Issued instruction to Return Home \n", getSimTime(), state_name[state]);
 					}
                     break;
-            				case LOWER_NOZZLE:
+            	case LOWER_NOZZLE:
 
                     if (isSimulatorReadyForNextInstruction())
 					{
@@ -377,8 +379,18 @@ int main()
             sleepMilliseconds((long) 1000 / POLL_LOOP_RATE);
         }
     }
-    /* state machine code for autonomous control mode */
-    else
+
+
+	/* state machine code for autonomous control mode */
+    //*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+	//
+	//*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+	//
+	//*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+	//
+	//*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+
+	else
     {
 
         while(!isPnPSimulationQuitFlagOn())
@@ -393,11 +405,16 @@ int main()
                 /* Initial state - waits for correct feeder to be selected */
                 case HOME:
 
-					if (finished == FALSE)
-					{
+					//if (finished == FALSE )
+					//{
 
+						if (pickedCount == number_of_components_to_place)
+						{
+							picked = TRUE;
+						}
 
-                        if (autoPicked[0] == FALSE || autoPicked[1] == FALSE || autoPicked[2] == FALSE )
+                        //if (picked == FALSE && (autoPicked[0] == FALSE || autoPicked[1] == FALSE || autoPicked[2] == FALSE) )
+						if (picked == FALSE)
                         {
                             if(i == 0)
                             {
@@ -412,91 +429,226 @@ int main()
                                 offset = -20;
                             }
 
-                            setTargetPos(TAPE_FEEDER_X[pi[count].feeder]+offset, TAPE_FEEDER_Y[pi[count].feeder]);
-                            printf("Time: %7.2f  New state: %.20s  Issued instruction to move to tape feeder %d\n", getSimTime(), state_name[state], i);
+                            setTargetPos(TAPE_FEEDER_X[pi[pickedCount].feeder]+offset, TAPE_FEEDER_Y[pi[pickedCount].feeder]);
+                            printf("Time: %7.2f  New state: %.20s  Issued instruction to move to tape feeder %d\n", getSimTime(), state_name[state], pi[pickedCount].feeder);
                             state = MOVE_TO_FEEDER;
+                            //break;
                         }
 
-                    case MOVE_TO_FEEDER:
+						//if (picked == TRUE && (autoPicked[0] == TRUE || autoPicked[1] == TRUE || autoPicked[2] == TRUE) )
+						if (picked == TRUE)
+                        {
+							if (autoPicked[0] == TRUE)
+							{
+								i = 0;
+							}
+							if (autoPicked[1] == TRUE)
+							{
+								i = 1;
+							}
+							if (autoPicked[2] == TRUE)
+							{
+								i = 2;
+							}
+							state = ROTATE;
+
+						}
+
+                break;
+
+                    //}
+
+				case MOVE_TO_FEEDER:
+
+					if (isSimulatorReadyForNextInstruction())
+					{
+						state = LOWER_NOZZLE;
+						printf("Time: %7.2f  New state: %.20s  Arrived at feeder, Ready to pick\n", getSimTime(), state_name[state]);
+						//sleepMilliseconds(20);
+					}
+				break;
+
+				case LOWER_NOZZLE:
 
                     if (isSimulatorReadyForNextInstruction())
-                    {
-                        state = WAIT;
-                        printf("Time: %7.2f  New state: %.20s  Arrived at feeder, Ready to pick\n", getSimTime(), state_name[state]);
-                    }
+					{
+						lowerNozzle(i);
+						state = PICK_COMPONENT;
+						printf("Time: %7.2f  New state: %.20s  Issued instruction to pick Component \n", getSimTime(), state_name[state]);
+						//sleepMilliseconds(20);
+					}
+                break;
+
+                case PICK_COMPONENT:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						applyVacuum(i);
+						state = RAISE_COMPONENT;
+						printf("Time: %7.2f  New state: %.20s  Issued instruction to Raise Nozzle \n", getSimTime(), state_name[state]);
+						//sleepMilliseconds(20);
+					}
+                break;
+
+                case RAISE_COMPONENT:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						raiseNozzle(i);
+						autoPicked[i] = TRUE;
+						pickedCount++;
+						printf("Time: %7.2f  New state: %.20s  Component %.2f Picked \n", getSimTime(), state_name[state], pi[pickedCount].component_value);
+						if (i < 2)
+						{
+							i++;
+							state = HOME;
+						}
+						else if (i == 2)
+						{
+							i = 0;
+							picked = TRUE;
+							state = TAKE_UP_PHOTO;
+						}
+						//sleepMilliseconds(20);
+					}
+                break;
+
+				case TAKE_UP_PHOTO:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						takePhoto(0);
+						//sleepMilliseconds(1000);
+						//theta_pick_error[0] = getPickErrorTheta(0);
+						//theta_pick_error[1] = getPickErrorTheta(1);
+						//theta_pick_error[2] = getPickErrorTheta(2);
+
+						state = HOME;
+						printf("Time: %7.2f  Up Photo taken\n", getSimTime());
+					}
+                break;
+
+				case ROTATE:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+                        theta_pick_error[i] = getPickErrorTheta(i);
+						rotateAngle =  pi[placedCount].theta_target - theta_pick_error[i];
+						rotateNozzle(i, rotateAngle);
+						state = MOVE_TO_PCB;
+						printf("Time: %7.2f  New state: %.20s  Component Rotation = %.2f error = %.2f Total = %.2f  \n", getSimTime(), state_name[state], pi[placedCount].theta_target, theta_pick_error[i], rotateAngle);
+					}
+                break;
+
+				case MOVE_TO_PCB:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						setTargetPos(pi[placedCount].x_target, pi[placedCount].y_target);
+						state = TAKE_DOWN_PHOTO;
+						printf("Time: %7.2f  New state: %.20s  Issued instruction to Take Photo from Above \n", getSimTime(), state_name[state]);
+					}
+                break;
+
+				case TAKE_DOWN_PHOTO:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						takePhoto(1);
+						//sleepMilliseconds(1000);
+						//x_preplace_error = getPreplaceErrorX();
+						//y_preplace_error = getPreplaceErrorY();
+						state = ADJUST;
+						printf("Time: %7.2f  New state: %.20s  Photos taken\n", getSimTime(), state_name[state]);
+
+					}
+                break;
+
+				case ADJUST:
+
+                    if (isSimulatorReadyForNextInstruction())
+					{
+
+						x_preplace_error = getPreplaceErrorX();
+						y_preplace_error = getPreplaceErrorY();
+						adjustX =  pi[placedCount].x_target - x_preplace_error;
+						adjustY =  pi[placedCount].y_target - y_preplace_error;
+						amendPos(adjustX, adjustY);
+						state = LOWER_COMPONENT;
+						printf("Time: %7.2f  New state: %.20s  Gantry Adjusted, Position error = x: %.2f y: %.2f\n", getSimTime(), state_name[state], x_preplace_error, y_preplace_error);
+					}
                     break;
 
+				case LOWER_COMPONENT:
 
-                            sleepMilliseconds(20);
-                            while(!isSimulatorReadyForNextInstruction())
-                            {
-                                //Blank while loop to wait until simulator is ready
-                            }
-                            if (isSimulatorReadyForNextInstruction())
-                            {
-                                printf("Time: %7.2f  Arrived at feeder\n", getSimTime());
-                                lowerNozzle(i);
-                                printf("Time: %7.2f  Issued instruction to lower Nozzle \n", getSimTime());
-                                sleepMilliseconds(20);
-                                while(!isSimulatorReadyForNextInstruction())
-                                {
-                                    //Blank while loop to wait until simulator is ready
-                                }
-                                if (isSimulatorReadyForNextInstruction())
-                                {
-                                    printf("Time: %7.2f  Nozzle Lowered\n", getSimTime());
-                                    applyVacuum(i);
-                                    printf("Time: %7.2f  Issued instruction to Apply Vacuum \n", getSimTime());
-                                    sleepMilliseconds(20);
-                                    while(!isSimulatorReadyForNextInstruction())
-                                    {
-                                        //Blank while loop to wait until simulator is ready
-                                    }
-                                    if (isSimulatorReadyForNextInstruction())
-                                    {
-                                            printf("Time: %7.2f Vacuum Applied\n", getSimTime());
-                                            raiseNozzle(i);
-                                            printf("Time: %7.2f  Issued instruction to Raise Nozzle \n", getSimTime());
-                                            sleepMilliseconds(20);
-                                            while(!isSimulatorReadyForNextInstruction())
-                                            {
-                                                //Blank while loop to wait until simulator is ready
-                                            }
-                                            if (isSimulatorReadyForNextInstruction())
-                                            {
-                                                    printf("Time: %7.2f  Component %s Picked\n", getSimTime(), pi[count].component_designation);
-                                            }
-                                    }
-                                }
-                            }
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						lowerNozzle(i);
+						state = PLACE_COMPONENT;
+						printf("Time: %7.2f  New state: %.20s  Issued instruction to Place component \n", getSimTime(), state_name[state]);
+					}
+                    break;
 
-                            count++;
+				case PLACE_COMPONENT:
 
-                        state = COMPLETED;
-                        break;
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						releaseVacuum(i);
+						state = RAISE_HEAD;
+						printf("Time: %7.2f  New state: %.20s  Issued instruction to Raise Nozzle \n", getSimTime(), state_name[state]);
+					}
+                    break;
 
-                    }
+				case RAISE_HEAD:
 
+                    if (isSimulatorReadyForNextInstruction())
+					{
+						raiseNozzle(i);
+						//increase counter
+						placedCount++;
+						//Reset variables
+						state = HOME;
+						autoPicked[i] = FALSE;
+
+						if (i == 2)
+						{
+							//all nozzles empty, reset flag and counter
+							picked = FALSE;
+							i = 0;
+						}
+
+						if (placedCount == number_of_components_to_place) //check if there are any components to pick
+                        {
+                            finished = TRUE;
+                            state = COMPLETED;
+                        }
+
+						printf("Time: %7.2f  New state: %.20s  Component %.2f Placed, waiting for next instruction\n", getSimTime(), state_name[state], pi[count].component_value);
+
+					}
+                    break;
 
                 case COMPLETED:
 
-                if (isSimulatorReadyForNextInstruction())
-				{
-
-					while(!isPnPSimulationQuitFlagOn())
+                    if (isSimulatorReadyForNextInstruction())
                     {
-                        c = getKey();
-                        if(c != '\0')
+
+                        while(!isPnPSimulationQuitFlagOn())
                         {
-                            printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
+                            c = getKey();
+                            if(c != '\0')
+                            {
+                                printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
+                            }
                         }
-                    }
                     break;
 
 					}
                 break;
 
+
             }
+            sleepMilliseconds((long) 1000 / POLL_LOOP_RATE);
         }
 
 
@@ -505,4 +657,3 @@ int main()
     pnpClose();
     return 0;
 }
-
