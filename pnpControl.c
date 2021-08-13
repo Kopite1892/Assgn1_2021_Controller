@@ -405,16 +405,22 @@ int main()
                 /* Initial state - waits for correct feeder to be selected */
                 case HOME:
 
-					//if (finished == FALSE )
-					//{
+                        if (pickedCount == 0)//initial loop, display components to place
+                        {
+                            printf("Time: %7.2f  Operating in Auto control mode, there are %d parts to place\n\n", getSimTime(), number_of_components_to_place);
+                            for(int k = 0; k < number_of_components_to_place; k++)
+                            {
+                                printf("Part %d details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n",
+                                k, pi[k].component_designation, pi[k].component_footprint, pi[k].component_value, pi[k].x_target, pi[k].y_target, pi[k].theta_target, pi[k].feeder);
+                            }
+                        }
 
-						if (pickedCount == number_of_components_to_place)
+						if (pickedCount == number_of_components_to_place)//exit and place components when no more to pick
 						{
 							picked = TRUE;
 						}
 
-                        //if (picked == FALSE && (autoPicked[0] == FALSE || autoPicked[1] == FALSE || autoPicked[2] == FALSE) )
-						if (picked == FALSE)
+						if (picked == FALSE)//pick 3 components
                         {
                             if(i == 0)
                             {
@@ -432,10 +438,8 @@ int main()
                             setTargetPos(TAPE_FEEDER_X[pi[pickedCount].feeder]+offset, TAPE_FEEDER_Y[pi[pickedCount].feeder]);
                             printf("Time: %7.2f  New state: %.20s  Issued instruction to move to tape feeder %d\n", getSimTime(), state_name[state], pi[pickedCount].feeder);
                             state = MOVE_TO_FEEDER;
-                            //break;
                         }
 
-						//if (picked == TRUE && (autoPicked[0] == TRUE || autoPicked[1] == TRUE || autoPicked[2] == TRUE) )
 						if (picked == TRUE)
                         {
 							if (autoPicked[0] == TRUE)
@@ -454,9 +458,7 @@ int main()
 
 						}
 
-                break;
-
-                    //}
+					break;
 
 				case MOVE_TO_FEEDER:
 
@@ -464,9 +466,8 @@ int main()
 					{
 						state = LOWER_NOZZLE;
 						printf("Time: %7.2f  New state: %.20s  Arrived at feeder, Ready to pick\n", getSimTime(), state_name[state]);
-						//sleepMilliseconds(20);
 					}
-				break;
+					break;
 
 				case LOWER_NOZZLE:
 
@@ -475,9 +476,8 @@ int main()
 						lowerNozzle(i);
 						state = PICK_COMPONENT;
 						printf("Time: %7.2f  New state: %.20s  Issued instruction to pick Component \n", getSimTime(), state_name[state]);
-						//sleepMilliseconds(20);
 					}
-                break;
+					break;
 
                 case PICK_COMPONENT:
 
@@ -486,9 +486,8 @@ int main()
 						applyVacuum(i);
 						state = RAISE_COMPONENT;
 						printf("Time: %7.2f  New state: %.20s  Issued instruction to Raise Nozzle \n", getSimTime(), state_name[state]);
-						//sleepMilliseconds(20);
 					}
-                break;
+					break;
 
                 case RAISE_COMPONENT:
 
@@ -509,24 +508,18 @@ int main()
 							picked = TRUE;
 							state = TAKE_UP_PHOTO;
 						}
-						//sleepMilliseconds(20);
 					}
-                break;
+					break;
 
 				case TAKE_UP_PHOTO:
 
                     if (isSimulatorReadyForNextInstruction())
 					{
 						takePhoto(0);
-						//sleepMilliseconds(1000);
-						//theta_pick_error[0] = getPickErrorTheta(0);
-						//theta_pick_error[1] = getPickErrorTheta(1);
-						//theta_pick_error[2] = getPickErrorTheta(2);
-
 						state = HOME;
 						printf("Time: %7.2f  Up Photo taken\n", getSimTime());
 					}
-                break;
+					break;
 
 				case ROTATE:
 
@@ -538,7 +531,7 @@ int main()
 						state = MOVE_TO_PCB;
 						printf("Time: %7.2f  New state: %.20s  Component Rotation = %.2f error = %.2f Total = %.2f  \n", getSimTime(), state_name[state], pi[placedCount].theta_target, theta_pick_error[i], rotateAngle);
 					}
-                break;
+					break;
 
 				case MOVE_TO_PCB:
 
@@ -548,21 +541,18 @@ int main()
 						state = TAKE_DOWN_PHOTO;
 						printf("Time: %7.2f  New state: %.20s  Issued instruction to Take Photo from Above \n", getSimTime(), state_name[state]);
 					}
-                break;
+					break;
 
 				case TAKE_DOWN_PHOTO:
 
                     if (isSimulatorReadyForNextInstruction())
 					{
 						takePhoto(1);
-						//sleepMilliseconds(1000);
-						//x_preplace_error = getPreplaceErrorX();
-						//y_preplace_error = getPreplaceErrorY();
 						state = ADJUST;
 						printf("Time: %7.2f  New state: %.20s  Photos taken\n", getSimTime(), state_name[state]);
 
 					}
-                break;
+					break;
 
 				case ADJUST:
 
@@ -604,8 +594,11 @@ int main()
                     if (isSimulatorReadyForNextInstruction())
 					{
 						raiseNozzle(i);
+						printf("Time: %7.2f  New state: %.20s  Component %.2f Placed, waiting for next instruction\n", getSimTime(), state_name[state], pi[placedCount].component_value);
+
 						//increase counter
 						placedCount++;
+
 						//Reset variables
 						state = HOME;
 						autoPicked[i] = FALSE;
@@ -619,11 +612,8 @@ int main()
 
 						if (placedCount == number_of_components_to_place) //check if there are any components to pick
                         {
-                            finished = TRUE;
                             state = COMPLETED;
                         }
-
-						printf("Time: %7.2f  New state: %.20s  Component %.2f Placed, waiting for next instruction\n", getSimTime(), state_name[state], pi[count].component_value);
 
 					}
                     break;
@@ -641,11 +631,8 @@ int main()
                                 printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
                             }
                         }
-                    break;
-
 					}
-                break;
-
+					break;
 
             }
             sleepMilliseconds((long) 1000 / POLL_LOOP_RATE);
