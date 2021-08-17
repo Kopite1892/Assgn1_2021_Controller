@@ -13,10 +13,10 @@
 	<termios.h>
 	<math.h>
 
-1626691022 source:c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrolinterface.c
+1629197286 source:c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrolinterface.c
 	"pnpControl.h"
 
-1628681524 c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrol.h
+1629197350 c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrol.h
 	<stdio.h>
 	<stdlib.h>
 	<fcntl.h>
@@ -26,7 +26,8 @@
 	<pthread.h>
 	<termios.h>
 	<math.h>
+	<stdbool.h>
 
-1628681209 source:c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrol.c
+1629198581 source:c:\users\graem\onedrive\documents\uni\ele3307\a1\assgn1_2021_controller\assgn1_2021_controller\pnpcontrol.c
 	"pnpControl.h"
 

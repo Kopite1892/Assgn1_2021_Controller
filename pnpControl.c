@@ -50,6 +50,7 @@ const double TAPE_FEEDER_X[NUMBER_OF_FEEDERS] = {FDR_0_X, FDR_1_X, FDR_2_X, FDR_
 const double TAPE_FEEDER_Y[NUMBER_OF_FEEDERS] = {FDR_0_Y, FDR_1_Y, FDR_2_Y, FDR_3_Y, FDR_4_Y, FDR_5_Y, FDR_6_Y, FDR_7_Y, FDR_8_Y, FDR_9_Y};
 
 const char nozzle_name[3][10] = {"left", "centre", "right"};
+
 int main()
 {
     pnpOpen();
@@ -407,11 +408,25 @@ int main()
 
                         if (pickedCount == 0)//initial loop, display components to place
                         {
+                            qsort (pi, number_of_components_to_place, sizeof(PlacementInfo), compare);
+                            //std::sort(&pi[0], &pi[number_of_components_to_place], partSorter);
                             printf("Time: %7.2f  Operating in Auto control mode, there are %d parts to place\n\n", getSimTime(), number_of_components_to_place);
                             for(int k = 0; k < number_of_components_to_place; k++)
                             {
-                                printf("Part %d details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n",
+                                printf("Part %d details:\nDesignation: %s\nFootprint: %s\nValue: %.2f\nx: %.2f\ny: %.2f\ntheta: %.2f\nFeeder: %d\n\n",
                                 k, pi[k].component_designation, pi[k].component_footprint, pi[k].component_value, pi[k].x_target, pi[k].y_target, pi[k].theta_target, pi[k].feeder);
+                            }
+                        }
+
+                        if (placedCount == number_of_components_to_place)
+                        {
+                            while(!isPnPSimulationQuitFlagOn())
+                            {
+                                c = getKey();
+                                if(c != '\0')
+                                {
+                                    printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
+                                }
                             }
                         }
 
@@ -442,19 +457,23 @@ int main()
 
 						if (picked == TRUE)
                         {
+							state = ROTATE;
 							if (autoPicked[0] == TRUE)
 							{
 								i = 0;
+								break;
 							}
 							if (autoPicked[1] == TRUE)
 							{
 								i = 1;
+								break;
 							}
 							if (autoPicked[2] == TRUE)
 							{
 								i = 2;
+								break;
 							}
-							state = ROTATE;
+
 
 						}
 
@@ -565,7 +584,7 @@ int main()
 						adjustY =  pi[placedCount].y_target - y_preplace_error;
 						amendPos(adjustX, adjustY);
 						state = LOWER_COMPONENT;
-						printf("Time: %7.2f  New state: %.20s  Gantry Adjusted, Position error = x: %.2f y: %.2f\n", getSimTime(), state_name[state], x_preplace_error, y_preplace_error);
+						printf("Time: %7.2f  New state: %.20s  Gantry Adjusted, Position error = x: %.2f y: %.2f New position x: %.2f y: %.2f\n", getSimTime(), state_name[state], x_preplace_error, y_preplace_error, adjustX, adjustY);
 					}
                     break;
 
@@ -594,10 +613,9 @@ int main()
                     if (isSimulatorReadyForNextInstruction())
 					{
 						raiseNozzle(i);
-						printf("Time: %7.2f  New state: %.20s  Component %.2f Placed, waiting for next instruction\n", getSimTime(), state_name[state], pi[placedCount].component_value);
-
 						//increase counter
 						placedCount++;
+						printf("Time: %7.2f  New state: %.20s  Component %d Placed, waiting for next instruction\n", getSimTime(), state_name[state], placedCount);
 
 						//Reset variables
 						state = HOME;
@@ -613,6 +631,7 @@ int main()
 						if (placedCount == number_of_components_to_place) //check if there are any components to pick
                         {
                             state = COMPLETED;
+                            break;
                         }
 
 					}
@@ -622,7 +641,7 @@ int main()
 
                     if (isSimulatorReadyForNextInstruction())
                     {
-
+                        printf("All components places - hit q to quit\n");
                         while(!isPnPSimulationQuitFlagOn())
                         {
                             c = getKey();

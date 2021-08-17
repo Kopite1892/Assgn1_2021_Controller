@@ -11,7 +11,6 @@
  */
 
 #include "pnpControl.h"
-
 PnP *pnp;
 int fd;
 struct termios old_term;
@@ -594,4 +593,17 @@ void sleepMilliseconds(long ms)
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms % 1000) * 1000000;
     nanosleep(&ts, NULL);
+}
+
+int compare (const void * a, const void * b)
+{
+    PlacementInfo *PlacementInfoA = (PlacementInfo *)a;
+    PlacementInfo *PlacementInfoB = (PlacementInfo *)b;
+
+    if (PlacementInfoA->feeder > PlacementInfoB->feeder) return 1;
+    if (PlacementInfoA->feeder < PlacementInfoB->feeder) return -1;
+
+    return 0; //same feeder
+
+//    return ( PlacementInfoB->feeder - PlacementInfoA->feeder );
 }

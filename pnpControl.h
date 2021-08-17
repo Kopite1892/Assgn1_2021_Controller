@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <termios.h>
 #include <math.h>
+#include <stdbool.h>
 
 #define MANUAL_CONTROL 1
 #define AUTONOMOUS_CONTROL 2
@@ -67,7 +68,7 @@
 #define PHOTO_LOOKUP 0
 #define PHOTO_LOOKDOWN 1
 
-#define POLL_LOOP_RATE 25          // poll loops per second was 50 - DANGER, changing this can result in unstable or incorrect operation
+#define POLL_LOOP_RATE 20          // poll loops per second was 50 - DANGER, changing this can result in unstable or incorrect operation
 
 #define TRUE 1
 #define FALSE 0
@@ -164,3 +165,4 @@ int isPnPSimulationQuitFlagOn();
 
 void sleepMilliseconds(long);
 
+int compare (const void * a, const void * b);
