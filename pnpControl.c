@@ -78,7 +78,6 @@ int main()
     double x_preplace_error = 0; //gantry x error
 	double y_preplace_error = 0; //gantry y error
 	double rotateAngle; //angle needed to rotate
-	double adjustX, adjustY; //X & Y adjustment needed
     char c;
     int count = 0; //setup a counter to keep track of parts
 	int pickedCount = 0; //setup a counter to keep track of autoPicking
@@ -298,10 +297,7 @@ int main()
 
                     if (isSimulatorReadyForNextInstruction())
 					{
-
-						adjustX =  pi[count].x_target - x_preplace_error;
-						adjustY =  pi[count].y_target - y_preplace_error;
-						amendPos(adjustX, adjustY);
+                        amendPos(x_preplace_error, y_preplace_error);
 						adjusted = TRUE;
 						state = WAIT;
 						printf("Time: %7.2f  New state: %.20s  Gantry Adjusted , waiting for next instruction\n", getSimTime(), state_name[state]);
@@ -375,12 +371,10 @@ int main()
 					}
                     break;
 
-
             }
             sleepMilliseconds((long) 1000 / POLL_LOOP_RATE);
         }
     }
-
 
 	/* state machine code for autonomous control mode */
     //*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
@@ -408,8 +402,8 @@ int main()
 
                         if (pickedCount == 0)//initial loop, display components to place
                         {
+                            //sort the centroid file and print it to the terminal
                             qsort (pi, number_of_components_to_place, sizeof(PlacementInfo), compare);
-                            //std::sort(&pi[0], &pi[number_of_components_to_place], partSorter);
                             printf("Time: %7.2f  Operating in Auto control mode, there are %d parts to place\n\n", getSimTime(), number_of_components_to_place);
                             for(int k = 0; k < number_of_components_to_place; k++)
                             {
@@ -417,24 +411,22 @@ int main()
                                 k, pi[k].component_designation, pi[k].component_footprint, pi[k].component_value, pi[k].x_target, pi[k].y_target, pi[k].theta_target, pi[k].feeder);
                             }
                         }
-
+                        //all components pplaced
                         if (placedCount == number_of_components_to_place)
                         {
-                            while(!isPnPSimulationQuitFlagOn())
-                            {
-                                c = getKey();
-                                if(c != '\0')
-                                {
-                                    printf("Time: %7.2f  All components placed - press q to quit \n", getSimTime());
-                                }
-                            }
+
+                            state = COMPLETED;
+                            break;
+
                         }
 
+                        //all components picked
 						if (pickedCount == number_of_components_to_place)//exit and place components when no more to pick
 						{
 							picked = TRUE;
 						}
 
+                        //nozzles are not full
 						if (picked == FALSE)//pick 3 components
                         {
                             if(i == 0)
@@ -455,6 +447,7 @@ int main()
                             state = MOVE_TO_FEEDER;
                         }
 
+                        //all nozzles have a part or no parts left to pick
 						if (picked == TRUE)
                         {
 							state = ROTATE;
@@ -473,8 +466,6 @@ int main()
 								i = 2;
 								break;
 							}
-
-
 						}
 
 					break;
@@ -515,7 +506,7 @@ int main()
 						raiseNozzle(i);
 						autoPicked[i] = TRUE;
 						pickedCount++;
-						printf("Time: %7.2f  New state: %.20s  Component %.2f Picked \n", getSimTime(), state_name[state], pi[pickedCount].component_value);
+						printf("Time: %7.2f  New state: %.20s  Component Picked \n", getSimTime(), state_name[state]);
 						if (i < 2)
 						{
 							i++;
@@ -577,14 +568,9 @@ int main()
 
                     if (isSimulatorReadyForNextInstruction())
 					{
-
-						x_preplace_error = getPreplaceErrorX();
-						y_preplace_error = getPreplaceErrorY();
-						adjustX =  pi[placedCount].x_target - x_preplace_error;
-						adjustY =  pi[placedCount].y_target - y_preplace_error;
-						amendPos(adjustX, adjustY);
+						amendPos(x_preplace_error, y_preplace_error);
 						state = LOWER_COMPONENT;
-						printf("Time: %7.2f  New state: %.20s  Gantry Adjusted, Position error = x: %.2f y: %.2f New position x: %.2f y: %.2f\n", getSimTime(), state_name[state], x_preplace_error, y_preplace_error, adjustX, adjustY);
+						printf("Time: %7.2f  New state: %.20s  Gantry Adjusted, Position error = x: %.2f y: %.2f\n", getSimTime(), state_name[state], x_preplace_error, y_preplace_error);
 					}
                     break;
 
@@ -641,6 +627,7 @@ int main()
 
                     if (isSimulatorReadyForNextInstruction())
                     {
+                        setTargetPos(0,0);
                         printf("All components places - hit q to quit\n");
                         while(!isPnPSimulationQuitFlagOn())
                         {
